@@ -17,7 +17,12 @@ import {
 } from '@nestjs/swagger';
 import { firstValueFrom, timeout } from 'rxjs';
 import { PATTERNS } from 'src/common/pattern';
-import { RegisterRequestDto, RegisterResponseDto } from './dtos';
+import {
+  LoginRequestDto,
+  LoginResponseDto,
+  RegisterRequestDto,
+  RegisterResponseDto,
+} from './dtos';
 
 @Controller('auth')
 export class AuthController {
@@ -40,6 +45,26 @@ export class AuthController {
     try {
       return await firstValueFrom(
         this.authClient.send(PATTERNS.AUTH_REGISTER, dto).pipe(timeout(5000)),
+      );
+    } catch (err) {
+      throw new InternalServerErrorException(err);
+    }
+  }
+
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Login a user' })
+  @ApiBody({ type: RegisterRequestDto })
+  @ApiCreatedResponse({
+    description: 'User logged in successfully',
+    type: RegisterResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Validation failed or bad input' })
+  @ApiConflictResponse({ description: 'Email already in use' })
+  async login(@Body() dto: LoginRequestDto): Promise<LoginResponseDto> {
+    try {
+      return await firstValueFrom(
+        this.authClient.send(PATTERNS.AUTH_LOGIN, dto).pipe(timeout(5000)),
       );
     } catch (err) {
       throw new InternalServerErrorException(err);

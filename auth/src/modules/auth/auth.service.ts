@@ -10,12 +10,16 @@ import { firstValueFrom, Observable, timeout } from 'rxjs';
 import { ERoleName } from './enums';
 import * as bcrypt from 'bcrypt';
 import { IRegisterResult, IUserProfile } from './interface';
+import { TokenService } from './token.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(AuthUser) private readonly users: Repository<AuthUser>,
     @InjectRepository(Role) private readonly roles: Repository<Role>,
+    private readonly tokenService: TokenService,
+    private readonly configService: ConfigService,
     @Inject('USER_CLIENT') private readonly userClient: ClientProxy,
   ) {}
 
@@ -71,5 +75,55 @@ export class AuthService {
       role = await this.roles.save(role);
     }
     return role;
+  }
+
+  async login(dto: { email: string; password: string }) {
+    try {
+      const user = await this.users.findOne({
+        where: { email: dto.email },
+        relations: ['role'],
+      });
+      if (!user) throw new RpcException('User not found');
+
+      const passwordMatch = await bcrypt.compare(
+        dto.password,
+        user.password_hash,
+      );
+      if (!passwordMatch) throw new RpcException('Invalid credentials');
+
+      const accessToken = await this.tokenService.generateToken(
+        {
+          user_id: user.user_id,
+          email: user.email,
+          role: user.role?.name,
+        },
+        this.configService.get<string>('config.jwt.secret', 'defaultSecretKey'),
+        this.configService.get<string>('config.jwt.expiresIn', '1h'),
+      );
+
+      const refresh_token = await this.tokenService.generateToken(
+        { user_id: user.user_id },
+        this.configService.get<string>(
+          'config.jwt.refreshSecret',
+          'defaultRefreshSecretKey',
+        ),
+        this.configService.get<string>('config.jwt.refreshExpiresIn', '7d'),
+      );
+      return {
+        user: {
+          user_id: user.user_id,
+          email: user.email,
+          role: user.role?.name,
+        },
+        credentials: {
+          access_token: accessToken,
+          refresh_token,
+        },
+        message: 'Login successful',
+      };
+    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+      throw new RpcException(error.message || 'Login failed');
+    }
   }
 }

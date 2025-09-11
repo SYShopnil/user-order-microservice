@@ -48,3 +48,22 @@ export class RegisterResponseDto {
   @ApiProperty({ example: 'Registration successful' })
   message!: string;
 }
+
+export class LoginResponseDto {
+  @ApiProperty({ example: '8f7a3a9a-7a1e-4a07-8d8c-52c4a1d8e6d2' })
+  accessToken!: string;
+
+  @ApiProperty({ example: '8f7a3a9a-7a1e-4a07-8d8c-52c4a1d8e6d2' })
+  refreshToken!: string;
+}
+
+export class LoginRequestDto {
+  @ApiProperty({ example: 'jane@example.com' })
+  @IsEmail()
+  email!: string;
+
+  @ApiProperty({ example: 'StrongPassw0rd!', minLength: 6 })
+  @IsString()
+  @MinLength(6)
+  password!: string;
+}
