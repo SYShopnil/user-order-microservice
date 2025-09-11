@@ -7,6 +7,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeOrmConfig } from './config/typeorm.config';
 import { DataSource } from 'typeorm';
 
+import { AuthModule } from './modules/auth/auth.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -15,6 +17,7 @@ import { DataSource } from 'typeorm';
       load: [configuration],
     }),
     TypeOrmModule.forRoot(typeOrmConfig),
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

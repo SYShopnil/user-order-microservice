@@ -8,7 +8,6 @@ async function bootstrap() {
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
     AppModule,
     {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
       transport: Transport.REDIS,
       options: {
         host: process.env.REDIS_HOST ?? 'localhost',
@@ -29,7 +28,6 @@ async function bootstrap() {
     }),
   );
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   app.useGlobalFilters(new BaseRpcExceptionFilter());
 
   await app.listen();
