@@ -28,7 +28,7 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalFilters(new BaseRpcExceptionFilter());
+  // app.useGlobalFilters(new BaseRpcExceptionFilter());
 
   await app.listen();
   console.log(`Auth Microservice is listening...`);

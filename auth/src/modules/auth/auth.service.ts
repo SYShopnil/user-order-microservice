@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -89,7 +89,8 @@ export class AuthService {
         dto.password,
         user.password_hash,
       );
-      if (!passwordMatch) throw new RpcException('Invalid credentials');
+      if (!passwordMatch)
+        throw new ForbiddenException('Invalid credentials provided');
 
       const accessToken = await this.tokenService.generateToken(
         {
@@ -122,7 +123,7 @@ export class AuthService {
         message: 'Login successful',
       };
     } catch (error) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+      console.log(error);
       throw new RpcException(error.message || 'Login failed');
     }
   }

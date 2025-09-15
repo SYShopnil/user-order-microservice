@@ -1,13 +1,16 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   HttpCode,
+  HttpException,
   HttpStatus,
   Inject,
   InternalServerErrorException,
+  NotFoundException,
   Post,
 } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -23,6 +26,7 @@ import {
   RegisterRequestDto,
   RegisterResponseDto,
 } from './dtos';
+import { FORBIDDEN_MESSAGE } from '@nestjs/core/guards';
 
 @Controller('auth')
 export class AuthController {
@@ -63,11 +67,30 @@ export class AuthController {
   @ApiConflictResponse({ description: 'Email already in use' })
   async login(@Body() dto: LoginRequestDto): Promise<LoginResponseDto> {
     try {
+      // throw new Error('Temporary error for testing'); // Simulate an error÷
+      // throw new NotFoundException('User not found');
+      // throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      // throw new RpcException(new ForbiddenException('Custom error message'));
+
       return await firstValueFrom(
         this.authClient.send(PATTERNS.AUTH_LOGIN, dto).pipe(timeout(5000)),
       );
     } catch (err) {
-      throw new InternalServerErrorException(err);
+      if (err instanceof HttpException) {
+        throw err; // Re-throw known HttpExceptions
+      } else if (err instanceof RpcException) {
+        console.log(err.getError());
+        // throw new InternalServerErrorException(err.message);
+        throw new HttpException(
+          (err.getError() as any).message || 'RPC Exception occurred',
+          (err.getError() as any).status || HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      } else {
+        console.log(err);
+        throw new InternalServerErrorException(err);
+      }
+      // console.log(err);
+      // throw new InternalServerErrorException(err);
     }
   }
 }
